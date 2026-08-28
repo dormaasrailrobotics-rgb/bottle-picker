@@ -19,7 +19,7 @@
 - [x] In-app Pi installation, pairing, and persistent-service guide
 - [x] Unit tests for pairing, authorization, command allow-list, telemetry, and alerts
 - [x] Browser verification of authenticated dashboard and realtime states
-- [ ] Final checkpoint before user publishes the permanent website
+- [x] Final checkpoint before user publishes the permanent website
 
 ## Follow-up hardening before publication
 
@@ -28,3 +28,5 @@
 - [x] Persist agent command acknowledgements by updating the database audit record
 - [x] Expand the in-app deployment guide with concrete install, pairing, environment, and systemd commands
 - [x] Add Vitest coverage for pairing expiry/use, protected robot procedures, telemetry transitions, and alert creation
+
+- [x] Fix duplicate `/` navigation keys by assigning the deployment guide a unique route and verify no React key warning

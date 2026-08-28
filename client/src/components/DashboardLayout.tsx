@@ -29,7 +29,7 @@ import { Button } from "./ui/button";
 
 const menuItems = [
   { icon: Bot, label: "Command Center", path: "/" },
-  { icon: BookOpen, label: "Deployment Guide", path: "/" },
+  { icon: BookOpen, label: "Deployment Guide", path: "/deployment-guide" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
