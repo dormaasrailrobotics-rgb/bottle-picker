@@ -37,6 +37,43 @@ export async function chatWithRobot(message: string) {
   }
 }
 
+export async function diagnoseAndSelfHeal(systemContext: { status: string; telemetry: Record<string, unknown>; recentAlerts: Array<{ type: string; message: string }> }) {
+  const systemPrompt = `You are BottleBot Autonomous Diagnostic AI. Analyze the system telemetry, errors, and alerts.
+If an error or fault is detected, diagnose the issue and determine if a self-healing action can recover the system safely.
+Allowed recovery commands: ${ALLOWED_COMMANDS.join(", ")}.
+Return ONLY a valid JSON object with keys:
+"diagnosis": string (clear explanation of the issue),
+"selfHealAction": string or null (one allowed command to attempt recovery, e.g., "STOP", "UNLOCK", "HOME"),
+"userRecommendation": string (advice or steps for the human operator).`;
+
+  try {
+    const text = await complete(chatModel, [{ role: "system", content: systemPrompt }, { role: "user", content: JSON.stringify(systemContext) }]);
+    const start = text.indexOf("{"); const end = text.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      const parsed = JSON.parse(text.slice(start, end + 1));
+      let action: string | null = null;
+      if (parsed.selfHealAction) action = validateCommand(parsed.selfHealAction);
+      return {
+        diagnosis: String(parsed.diagnosis || "No anomaly detected"),
+        selfHealAction: action,
+        userRecommendation: String(parsed.userRecommendation || "System operating normally"),
+      };
+    }
+  } catch (err: any) {
+    return {
+      diagnosis: `Automatic diagnosis offline: ${err.message}`,
+      selfHealAction: null,
+      userRecommendation: "Check physical connections and agent logs.",
+    };
+  }
+
+  return {
+    diagnosis: "System telemetry appears nominal.",
+    selfHealAction: null,
+    userRecommendation: "No action required.",
+  };
+}
+
 export async function askAboutCamera(jpegBase64: string, prompt: string) {
   const clean = jpegBase64.replace(/^data:image\/jpeg;base64,/, "");
   return complete(visionModel, [{ role: "user", content: [

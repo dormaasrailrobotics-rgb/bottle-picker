@@ -46,6 +46,30 @@ export const appRouter = router({
       if (!state || !state.cameraJpeg) throw new Error("No live camera frame is available from this robot");
       return { answer: await askAboutCamera(state.cameraJpeg, input.prompt) };
     }),
+    diagnose: protectedProcedure.input(z.object({ robotId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const state = await getRobotState(input.robotId, ctx.user.id);
+      if (!state) throw new Error("Robot not found");
+      const db = await getDb();
+      let recentAlerts: Array<{ type: string; message: string }> = [];
+      if (db) {
+        const rows = await db.select().from(robotAlerts).where(eq(robotAlerts.robotId, input.robotId)).orderBy(desc(robotAlerts.id)).limit(5);
+        recentAlerts = rows.map(r => ({ type: r.type, message: r.message }));
+      }
+      const { diagnoseAndSelfHeal } = await import("./nvidia");
+      const result = await diagnoseAndSelfHeal({
+        status: state.status,
+        telemetry: state.telemetry || {},
+        recentAlerts,
+      });
+
+      let queued = null;
+      if (result.selfHealAction) {
+        const command = validateCommand(result.selfHealAction);
+        queued = await enqueueCommand(input.robotId, command);
+        await logCommand(input.robotId, ctx.user.id, command, { ok: true, queued: true, source: "ai_self_heal" }, queued.id);
+      }
+      return { ...result, queued };
+    }),
   }),
   robot: router({
     list: protectedProcedure.query(({ ctx }) => listRobots(ctx.user.id)),
