@@ -1,0 +1,1 @@
+ALTER TABLE `robotCommands` ADD `agentCommandId` varchar(64);
