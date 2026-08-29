@@ -125,11 +125,12 @@ def test_serial():
         print("Error: PySerial is not installed in Python environment.")
         sys.exit(1)
     port = find_serial_port()
-    print(f"Testing Arduino USB serial connection on port {port} at 115200 baud...")
+    baud = int(os.environ.get("SERIAL_BAUD", "115200"))
+    print(f"Testing Arduino USB serial connection on port {port} at {baud} baud...")
     try:
-        dev = serial.Serial(port, 115200, timeout=2)
+        dev = serial.Serial(port, baud, timeout=2)
         time.sleep(1.5)
-        dev.write(b"HOME\n")
+        dev.write(b"H\n")
         res = dev.readline().decode(errors="replace").strip()
         dev.close()
         print(f"Response from Arduino: {res}")
@@ -166,11 +167,12 @@ def main():
     serial_port = find_serial_port()
     camera_index = find_camera_index()
     interval = float(os.environ.get("AGENT_INTERVAL_SECONDS", "0.8"))
+    baud = int(os.environ.get("SERIAL_BAUD", "115200"))
 
     arduino = None
     if serial is not None:
         try:
-            arduino = serial.Serial(serial_port, 115200, timeout=1)
+            arduino = serial.Serial(serial_port, baud, timeout=1)
         except Exception as err:
             print(f"Serial init warning: {err}")
 
@@ -191,7 +193,7 @@ def main():
         fault_msg = None
         if arduino is None and serial is not None:
             try:
-                arduino = serial.Serial(serial_port, 115200, timeout=1)
+                arduino = serial.Serial(serial_port, baud, timeout=1)
                 last_serial_err = None
             except Exception as err:
                 fault_msg = f"Arduino USB serial port ({serial_port}) unavailable: {err}"
